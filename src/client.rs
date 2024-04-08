@@ -11,8 +11,10 @@ use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::pin::Pin;
 use std::task::Poll;
+use std::net::UdpSocket;
+//use std::net::TcpStream;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use tokio::net::{TcpStream, UdpSocket};
+use tokio::net::{TcpStream};
 
 const MAX_ADDR_LEN: usize = 260;
 
@@ -448,7 +450,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Socks5Datagram<S> {
             .to_socket_addrs()?
             .next()
             .context("unreachable")?;
-        let out_sock = UdpSocket::bind(client_bind_addr).await?;
+        let out_sock = UdpSocket::bind(client_bind_addr)?;
         info!("UdpSocket client socket bind to {}", client_bind_addr);
 
         // Init socks5 stream.
@@ -466,7 +468,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Socks5Datagram<S> {
             .to_socket_addrs()?
             .next()
             .context("unreachable")?;
-        out_sock.connect(proxy_addr_resolved).await?;
+        out_sock.connect(proxy_addr_resolved)?;
         info!("UdpSocket client connected to {}", proxy_addr_resolved);
 
         Ok(Socks5Datagram {
@@ -491,13 +493,13 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Socks5Datagram<S> {
         let buf_len = buf.len();
         buf.extend_from_slice(data);
 
-        return Ok(self.socket.send(&buf).await? - buf_len);
+        return Ok(self.socket.send(&buf)? - buf_len);
     }
 
     /// Like `UdpSocket::recv_from`.
     pub async fn recv_from(&self, data_store: &mut [u8]) -> Result<(usize, TargetAddr)> {
         let mut buf = [0u8; 0x10000];
-        let (size, _) = self.socket.recv_from(&mut buf).await?;
+        let (size, _) = self.socket.recv_from(&mut buf)?;
 
         let (frag, target_addr, data) = parse_udp_request(&mut buf[..size]).await?;
 
