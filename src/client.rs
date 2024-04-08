@@ -473,6 +473,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Socks5Datagram<S> {
 
         Ok(Socks5Datagram {
             socket: out_sock,
+    
             stream: proxy_stream,
             proxy_addr: Some(proxy_addr),
         })
@@ -527,6 +528,9 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Socks5Datagram<S> {
         &self.socket
     }
 
+    pub fn get_socket(&self) -> UdpSocket {
+        self.socket.try_clone().unwrap()
+    }
     /// Returns a mutable reference to the inner socket.
     pub fn get_mut(&mut self) -> &mut UdpSocket {
         &mut self.socket
